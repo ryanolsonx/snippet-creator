@@ -14,6 +14,9 @@ function sanitizePowershell(code) {
 }
 
 function cleanBody(code, languageId) {
+  // Because of the VSCode is compatible with TextMate.
+  // Backslash has some different behaviour.
+  code = code.replace("\\", "\\\\");
   if (languageId === 'powershell') {
     return sanitizePowershell(code.replace(/\t/g, '\\t'));
   } else {

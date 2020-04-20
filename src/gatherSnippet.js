@@ -16,9 +16,15 @@ async function gatherSnippet() {
     prompt: 'Enter snippet prefix'
   });
 
-  const description = await vscode.window.showInputBox({
-    prompt: 'Enter snippet description'
-  });
+  let description
+  if (vscode.workspace.getConfiguration().get("snippet-creator.autoDescription")) {
+    description = prefix
+  } else {
+    description = await vscode.window.showInputBox({
+      prompt: 'Enter snippet description'
+    });
+  }
+
 
   return {
     language: editor.document.languageId,
