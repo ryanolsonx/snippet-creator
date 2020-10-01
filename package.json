@@ -30,6 +30,22 @@
 				"command": "snippet-creator.createSnippet",
 				"title": "Snippet Creator: Create Snippet"
 			}
+		],
+		"configuration": [
+			{
+				"title": "Snippet Creator",
+				"properties": {
+					"snippet-creator.snippet-location": {
+						"type": "string",
+						"default": "folder",
+						"enum": [
+							"user",
+							"folder"
+						],
+						"scope": "resource"
+					}
+				}
+			}
 		]
 	},
 	"scripts": {

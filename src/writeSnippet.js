@@ -1,6 +1,7 @@
 const vscode = require('vscode');
 const os = require('os');
 const fs = require('fs');
+const path = require('path');
 const jsonc = require('jsonc-parser');
 const util = require('util');
 const { promisify } = util;
@@ -13,20 +14,21 @@ const fsReadFile = promisify(fs.readFile);
 async function writeSnippet(snippet) {
   try {
     const { jsonText, snippets, snippetFile } = await getSnippets(snippet);
-    if (snippets[snippet.description] !== undefined) {
+    if (snippets[snippet.name] !== undefined) {
       vscode.window.showErrorMessage(
-        'A snippet with this description already exists'
+        'A snippet with this name already exists'
       );
       return;
     }
 
     const edit = jsonc.modify(
       jsonText,
-      [snippet.description],
+      [snippet.name],
       {
+        scope: snippet.language,
         prefix: snippet.prefix,
-        body: snippet.body,
-        description: snippet.description
+        description: snippet.description,
+        body: snippet.body
       },
       {
         formattingOptions: {
@@ -71,13 +73,32 @@ function getDirectorySeparator() {
   }
 }
 
-async function getSnippetFileContents(snippet) {
+function getSnippetFilePath(snippet) {
   const directorySeparator = getDirectorySeparator();
-  const settingsPath = getSettingsPath();
+  const userSettingsPath = getSettingsPath();
 
-  const snippetFile =
-    settingsPath +
-    util.format('snippets%s.json', directorySeparator + snippet.language);
+  const location = vscode.workspace.getConfiguration("", snippet.document.uri).get("snippet-creator.snippet-location");
+  switch (location) {
+    case "folder":
+      const validFolders = vscode.workspace.workspaceFolders.filter(f => snippet.document.uri.fsPath.startsWith(f.uri.fsPath));
+      if (validFolders.length === 0) {
+        return null;
+      }
+
+      return path.join(
+        validFolders[0].uri.fsPath,
+        '.vscode',
+        `${snippet.language}.code-snippets`
+      );
+    case "user":
+    default:
+      return userSettingsPath +
+        util.format('snippets%s.json', directorySeparator + snippet.language);
+  }
+}
+
+async function getSnippetFileContents(snippet) {
+  const snippetFile = getSnippetFilePath(snippet);
 
   if (!(await fsExists(snippetFile))) {
     await fsOpen(snippetFile, 'w+');
@@ -106,8 +127,7 @@ async function getSnippets(snippet) {
     });
 
     vscode.window.showErrorMessage(
-      `Error${parsingErrors.length > 1 ? 's' : ''} on parsing current ${
-        snippet.language
+      `Error${parsingErrors.length > 1 ? 's' : ''} on parsing current ${snippet.language
       } snippet file: ${errors.join(', ')}`
     );
 

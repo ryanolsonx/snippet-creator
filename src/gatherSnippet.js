@@ -12,6 +12,10 @@ async function gatherSnippet() {
     return;
   }
 
+  const name = await vscode.window.showInputBox({
+    prompt: 'Enter snippet name'
+  });
+
   const prefix = await vscode.window.showInputBox({
     prompt: 'Enter snippet prefix'
   });
@@ -22,8 +26,10 @@ async function gatherSnippet() {
 
   return {
     language: editor.document.languageId,
+    name,
     prefix,
     description,
+    document: editor.document,
     body: createBody(
       editor.document.getText(selection),
       editor.document.languageId
