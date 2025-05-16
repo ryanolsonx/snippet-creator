@@ -13,20 +13,21 @@ const fsReadFile = promisify(fs.readFile);
 async function writeSnippet(snippet) {
   try {
     const { jsonText, snippets, snippetFile } = await getSnippets(snippet);
-    if (snippets[snippet.description] !== undefined) {
+    const description = snippet.description || snippet.prefix;
+    if (snippets[description] !== undefined) {
       vscode.window.showErrorMessage(
-        'A snippet with this description already exists'
+        `A snippet with this description "${description}" already exists`
       );
       return;
     }
 
     const edit = jsonc.modify(
       jsonText,
-      [snippet.description],
+      [description],
       {
         prefix: snippet.prefix,
         body: snippet.body,
-        description: snippet.description
+        description,
       },
       {
         formattingOptions: {
@@ -40,7 +41,7 @@ async function writeSnippet(snippet) {
 
     const fileContent = jsonc.applyEdits(jsonText, edit);
     await fsWriteFile(snippetFile, fileContent);
-    vscode.window.showInformationMessage(`Snippet added`);
+    vscode.window.showInformationMessage('Snippet added');
   } catch (error) {
     console.error('something went wrong trying to get the snippet file');
     return;
